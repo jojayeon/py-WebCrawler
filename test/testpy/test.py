@@ -37,6 +37,13 @@ def get_search_results(query, num_results):
         print(f"HTTP 요청 중 오류 발생: {e}")
         return []
 
+def extract_text_from_tag(tag):
+    text = ''
+    for element in tag.contents:
+        if isinstance(element, str):
+            text += element.strip() + ' '
+    return text.strip()
+
 def crawl_article(url):
     try:
         response = requests.get(url)
@@ -44,12 +51,15 @@ def crawl_article(url):
         soup = BeautifulSoup(response.text, 'html.parser')
         # 기사 내용 수집
         article_content = ''
-        #가져올 기사들의 내용이 있는 태그들 
-        tags_to_extract = ['p', 'div', 'article', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'section', 'li','span','a']
-        #추출
-        for tag in tags_to_extract:
-            for element in soup.find_all(tag):
-                article_content += element.get_text() + ' '
+        tags_to_extract = [
+    'p', 'div', 'article', 'section', 'header', 'footer', 'nav', 'aside',
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'code',
+    'li', 'a', 'summary','span','strong']
+        for tag_name in tags_to_extract:
+            for tag in soup.find_all(tag_name):
+                # 자신의 텍스트만 추출
+                article_content += extract_text_from_tag(tag) + ' '
+                
         return article_content
     except requests.RequestException as e:
         print(f"HTTP 요청 중 오류 발생: {e}")
@@ -64,23 +74,23 @@ def analyze_content(content, search_terms):
 
 # 실행파트 - 이 파일에서만 작동하는 코드이다 - export 해서 다른 파일에서 실행했을 때__name__가 있는 부분은 실행되지 않는다. 이 주석 아래부분은 export했을 때 없는 부분이라 생각하면 됨 
 if __name__ == "__main__":
-    query = "저출산" #검색어 
-    search_terms = ["산업화","도시화","지원","의료","수명","평균 수명", "해결"," 문제","연금","임금","병원","비용","노동력","노동","생산","일자리","노인일자리","정년","사교육","이성","비용","데이트","시간","여유","결혼","나이","자녀","딩크족","안정감","경력","경력단절","커리어","불임","입양","육아","양육","사회생활","결혼율","비교","사회분위기","열등감","경쟁사회","고령화"] #분석화할 데이터
+    query = "고령화" #검색어 
+    search_terms = ["산업화","도시화","현대화","지원","의료","수명","평균 수명","해결","문제","연금","임금","병원","비용","노동력","노동","생산","일자리","노인일자리","시간","여유","결혼","나이","자녀","비교","육아","양육","저출산"] #분석화할 데이터
     # 구글에서 검색 결과 URL 추출
-    search_results = get_search_results(query,15)
+    search_results = get_search_results(query,15) #갯수 적기
 
     total_count = {term: 0 for term in search_terms}
     if search_results:
     # 각 URL에서 내용 크롤링 및 분석
         for url in search_results:
         #크롤링
-            # print(f"\n크롤링 중인 URL: {url}")
+            print(f"\n크롤링 중인 URL: {url}")
             content = crawl_article(url)
             if content:
                 #분석 횟수 계산
                 results = analyze_content(content, search_terms)
                 for term, count in results.items():
-                    # print(f"'{term}' 단어의 발생 횟수: {count}")
+                    print(f"'{term}' 단어의 발생 횟수: {count}")
                     total_count[term] += count
             else:
                 print("크롤링된 내용이 없습니다.")
@@ -90,4 +100,5 @@ if __name__ == "__main__":
 # 고령화
 # ["산업화","도시화","현대화","지원","의료","수명","평균 수명","해결","문제","연금","임금","병원","비용","노동력","노동","생산","일자리","노인일자리","시간","여유","결혼","나이","자녀","비교","육아","양육","저출산"]
 # 저출산
-# ["산업화","도시화","지원","의료","수명","평균 수명","해결","문제","연금","임금","병원","비용","노동력","노동","생산","일자리","노인일자리","정년","사교육","이성","비용","데이트","시간","여유","결혼","나이","자녀","딩크족","안정감","경력","경력단절","커리어","불임","입양","육아","양육","결혼율","비교","열등감","경쟁사회","고령화"]
+# ["산업화","도시화","지원","의료","수명","평균 수명","해결","문제","연금","임금","병원","비용","노동력","노동","생산","일자리","노인일자리","정년","사교육","이성","비용","데이트","시간","여유","결혼","나이","자녀","딩크족","안정감","경력","경력단절","커리어","불임","입양","육아","양육","결혼율","비교","열등감","경쟁사회","sns","연예인","고령화"]
+
