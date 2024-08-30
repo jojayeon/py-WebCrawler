@@ -64,92 +64,30 @@ def analyze_content(content, search_terms):
 
 # 실행파트 - 이 파일에서만 작동하는 코드이다 - export 해서 다른 파일에서 실행했을 때__name__가 있는 부분은 실행되지 않는다. 이 주석 아래부분은 export했을 때 없는 부분이라 생각하면 됨 
 if __name__ == "__main__":
-    query = "고령화" #검색어 
-    search_terms = ["고령화","저출산"] #분석화할 데이터
+    query = "저출산" #검색어 
+    search_terms = ["산업화","도시화","지원","의료","수명","평균 수명", "해결"," 문제","연금","임금","병원","비용","노동력","노동","생산","일자리","노인일자리","정년","사교육","이성","비용","데이트","시간","여유","결혼","나이","자녀","딩크족","안정감","경력","경력단절","커리어","불임","입양","육아","양육","사회생활","결혼율","비교","사회분위기","열등감","경쟁사회","고령화"] #분석화할 데이터
     # 구글에서 검색 결과 URL 추출
-    search_results = get_search_results(query,10)
+    search_results = get_search_results(query,15)
+
+    total_count = {term: 0 for term in search_terms}
     if search_results:
     # 각 URL에서 내용 크롤링 및 분석
         for url in search_results:
         #크롤링
-            print(f"\n크롤링 중인 URL: {url}")
+            # print(f"\n크롤링 중인 URL: {url}")
             content = crawl_article(url)
             if content:
                 #분석 횟수 계산
                 results = analyze_content(content, search_terms)
                 for term, count in results.items():
-                    print(f"'{term}' 단어의 발생 횟수: {count}")
+                    # print(f"'{term}' 단어의 발생 횟수: {count}")
+                    total_count[term] += count
             else:
                 print("크롤링된 내용이 없습니다.")
-
-
-
-
-
-
-
-
-
-
-# import requests
-# from bs4 import BeautifulSoup
-# import urllib.parse
-# import time
-# def get_search_results(query, num_results):
-#     # 주소
-#     search_url = f"https://www.google.com/search?q={urllib.parse.quote(query)}&num={num_results}"
-#     headers = {
-#         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
-#     }
-#     try:
-#         response = requests.get(search_url, headers=headers)
-#         response.raise_for_status()
-#         soup = BeautifulSoup(response.text, 'html.parser')
-#         links = []
-#         for a_tag in soup.find_all('a', href=True):
-#             href = a_tag['href']
-#             if 'url=' in href:
-#                 link = href.split('url=')[1].split('&')[0]
-#                 if not link.endswith('.jpg')and not link.endswith('.png') and 'google.com' not in link and 'http' in link:
-#                     links.append(urllib.parse.unquote(link))
-#         return links
-#     except requests.RequestException as e:
-#         print(f"HTTP 요청 중 오류 발생: {e}")
-#         return []
-
-# def crawl_article(url):
-#     try:
-#         response = requests.get(url)
-#         response.raise_for_status()
-#         soup = BeautifulSoup(response.text, 'html.parser')
-#         article_content = '' 
-#         tags_to_extract = ['p', 'div', 'article', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'section', 'li','span','a']
-#         for tag in tags_to_extract:
-#             for element in soup.find_all(tag):
-#                 article_content += element.get_text() + ' '
-#         return article_content
-#     except requests.RequestException as e:
-#         print(f"HTTP 요청 중 오류 발생: {e}")
-#         return None
-
-# def analyze_content(content, search_terms):
-#     found_terms = {term: 0 for term in search_terms}
-#     for term in search_terms:
-#         found_terms[term] = content.lower().count(term.lower())
-#     return found_terms
-
-# if __name__ == "__main__":
-#     query = "고령화"
-#     search_terms = ["고령화","저출산"]
-#     search_results = get_search_results(query,5)
-#     if search_results:
-#         for url in search_results:
-#             print(f"\n크롤링 중인 URL: {url}")
-#             content = crawl_article(url)
-#             if content:
-#                 results = analyze_content(content, search_terms)
-#                 for term, count in results.items():
-#                     print(f"'{term}' 단어의 발생 횟수: {count}")
-#             else:
-#                 print("크롤링된 내용이 없습니다.")        
-#             time.sleep(1)
+    print(f"\n ${query}에 관한 총 발생 횟수:")
+    for term, count in total_count.items():
+        print(f"'{term}': {count}")
+# 고령화
+# ["산업화","도시화","현대화","지원","의료","수명","평균 수명","해결","문제","연금","임금","병원","비용","노동력","노동","생산","일자리","노인일자리","시간","여유","결혼","나이","자녀","비교","육아","양육","저출산"]
+# 저출산
+# ["산업화","도시화","지원","의료","수명","평균 수명","해결","문제","연금","임금","병원","비용","노동력","노동","생산","일자리","노인일자리","정년","사교육","이성","비용","데이트","시간","여유","결혼","나이","자녀","딩크족","안정감","경력","경력단절","커리어","불임","입양","육아","양육","결혼율","비교","열등감","경쟁사회","고령화"]
