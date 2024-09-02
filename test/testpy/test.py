@@ -27,9 +27,14 @@ def get_search_results(query, num_results):
             href = a_tag['href']
             if 'url=' in href:
                 link = href.split('url=')[1].split('&')[0]
-
-                if not link.endswith('.jpg') and not link.endswith('.png') and not link.endswith('.jpg') and not link.endswith('.gif') and not link.endswith('.mp4') and 'vimeo.com' not in link and 'instagram.com' not in link and 'imgur.com' not in link and'download' not in link and 'attachment' not in link and 'google.com' not in link and 'youtube.com' not in link and 'http' in link and 'https' in link:
-                    links.append(urllib.parse.unquote(link))
+                if'google.com' not in link and 'http' in link: # //!
+                    try:
+                        head_response = requests.head(link, headers={"User-Agent": headers["User-Agent"]}, allow_redirects=True)
+                        head_response.raise_for_status()
+                        if 'text/html' in head_response.headers.get('Content-Type', ''):
+                            links.append(urllib.parse.unquote(link))
+                    except requests.RequestException as e:
+                        print(f"헤더 요청 중 오류 발생: {e}")
                 #주소에 맞게 디코딩
         return links
     #오류
@@ -48,13 +53,19 @@ def crawl_article(url):
     try:
         response = requests.get(url)
         response.raise_for_status()
+        
+        content_type = response.headers.get('Content-Type', '')
+        if 'text/html' not in content_type:
+            print(f"URL '{url}'는 HTML 형식이 아닙니다. (Content-Type: {content_type})")
+            return None  # HTML 형식이 아닌 경우 None을 반환
+
         soup = BeautifulSoup(response.text, 'html.parser')
         # 기사 내용 수집
         article_content = ''
         tags_to_extract = [
     'p', 'div', 'article', 'section', 'header', 'footer', 'nav', 'aside',
     'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'code',
-    'li', 'a', 'summary','span','strong','td']
+    'li', 'a', 'summary','span','strong']
         for tag_name in tags_to_extract:
             for tag in soup.find_all(tag_name):
                 # 자신의 텍스트만 추출
@@ -71,12 +82,14 @@ def analyze_content(content, search_terms):
         found_terms[term] = content.lower().count(term.lower())
     return found_terms
 
+
 # 실행파트 - 이 파일에서만 작동하는 코드이다 - export 해서 다른 파일에서 실행했을 때__name__가 있는 부분은 실행되지 않는다. 이 주석 아래부분은 export했을 때 없는 부분이라 생각하면 됨 
 if __name__ == "__main__":
-    query = "저출산" #검색어 
-    search_terms = ["산업화","도시화","지원","의료","수명","평균 수명","해결","문제","연금","임금","병원","비용","노동력","노동","생산","일자리","노인일자리","정년","사교육","이성","비용","데이트","시간","여유","결혼","나이","자녀","딩크족","안정감","경력","경력단절","커리어","불임","입양","육아","양육","결혼율","열등감","경쟁사회","sns","연예인","고령화"] #분석화할 데이터
+    query = "고령화" #검색어 
+    search_terms = ["산업화","도시화","현대화","지원","의료","수명","평균 수명","해결","문제","연금","임금","병원","비용","노동력","노동","생산","일자리","노인일자리","시간","여유","결혼","나이","자녀","육아","양육","저출산"] #분석화할 데이터
     # 구글에서 검색 결과 URL 추출
-    search_results = get_search_results(query,15) #가져올 사이트 갯수 적기
+    search_results = get_search_results(query,50) #갯수 적기
+
     total_count = {term: 0 for term in search_terms}
     if search_results:
     # 각 URL에서 내용 크롤링 및 분석
