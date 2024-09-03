@@ -111,7 +111,7 @@ def analyze_content(content):
 def filter_words(word_counts, min_count, exclude_words):
     # 제외할 단어 리스트를 포함하여 필터링
     # min_count보다 큰경우만 찾아, word 안에 exclude_words이 단어들이 없어야 한다.는 조건을 걸려있음
-    # 
+    # word-키, count-값 으로 저장한 딕셔너리로 저장 
     filtered_counts = {word: count for word, count in word_counts.items() if count >= min_count and word not in exclude_words}
     return filtered_counts
 
