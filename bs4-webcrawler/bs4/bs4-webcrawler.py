@@ -136,6 +136,7 @@ if __name__ == "__main__":
                 total_word_counts.update(word_counts)
             else:
                 print("크롤링된 내용이 없습니다.")
+            time.sleep(0.5)
     
     # 다 하고 나서 원하는 데이터만 가져오게 설정 
     # 빈도수가 20번 이상인 것들만 가져오고 필터링
@@ -147,4 +148,3 @@ if __name__ == "__main__":
     for word, count in filtered_word_counts.items():
         print(f"'{word}': {count}")
     
-        time.sleep(0.5)
