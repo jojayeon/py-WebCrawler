@@ -27,8 +27,7 @@ def get_search_results(query, num_results):
             href = a_tag['href']
             if 'url=' in href:
                 link = href.split('url=')[1].split('&')[0]
-
-                if not link.endswith('.jpg') and not link.endswith('.png') and not link.endswith('.jpg') and not link.endswith('.gif') and not link.endswith('.mp4') and 'vimeo.com' not in link and 'instagram.com' not in link and 'imgur.com' not in link and'download' not in link and 'attachment' not in link and 'google.com' not in link and 'youtube.com' not in link and 'http' in link and 'https' in link:
+                if not ('.jpg' in link or '.png' in link or '.gif' in link or '.pdf' in link or '.mp4' in link or 'vimeo.com' in link or 'instagram.com' in link or 'imgur.com' in link or 'download' in link or 'attachment' in link or 'down.do' in link or 'FileDown.do' in link or 'google.com' in link or 'youtube.com' in link) and ('http' in link or 'https' in link):
                     links.append(urllib.parse.unquote(link))
                 #주소에 맞게 디코딩
         return links
