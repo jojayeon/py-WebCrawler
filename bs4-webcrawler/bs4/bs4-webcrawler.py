@@ -13,95 +13,137 @@ EXCLUDE_WORDS = [ '은', '는', '이', '가', '께서', '이란', '란', '이니
 # 여기에 제외할 단어들을 추가하세요
 
 def get_search_results(query, num_results):
+    # 구글에 원하는 단어로 검색 몇개 검색할지 정해줌 
     search_url = f"https://www.google.com/search?q={urllib.parse.quote(query)}&num={num_results}"
+    # 봇이 아닌 것처럼 만들어줌
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
     }
     try:
+        # get요청을 보냄
         response = requests.get(search_url, headers=headers)
+        # 요청 실패시 404에러
         response.raise_for_status()
+        # text데이터 파싱 BeautifulSoup객체
         soup = BeautifulSoup(response.text, 'html.parser')
+        # 주소들 넣은 list 빈공간
         links = []
+        # a태크에 주소 있는 부분 모두 가져와서 하나하나 순서대로  a_tag로 주면서 for문처럼하나씩 작업
         for a_tag in soup.find_all('a', href=True):
             href = a_tag['href']
             if 'url=' in href:
+                # 주소 전처리 
+                    # url= ~ & 사이에 있는 문자열 
                 link = href.split('url=')[1].split('&')[0]
+                # 주소들 필터링
                 if not ('.jpg' in link or '.png' in link or '.gif' in link or '.pdf' in link or '.mp4' in link
                         or 'vimeo.com' in link or 'instagram.com' in link or 'imgur.com' in link or 'download' in link or 'attachment' in link or 'down.do' in link or 'FileDown.do' in link or 'google.com' in link or 'youtube.com' in link) and ('http' in link or 'https' in link):
+                    # 디코딩 
                     links.append(urllib.parse.unquote(link))
-                    # print(links)
         return links
     except requests.RequestException as e:
         print(f"HTTP 요청 중 오류 발생: {e}")
         return []
 
+# 태그에 하위에 있는 문자열만 가져오게 만듬 중복 때문에
 def extract_text_from_tag(tag):
     text = ''
+    # tag안에 자료 모두 한번 씩 element로 넣음
     for element in tag.contents:
+        # isinstance - bs4의 함수 -> element안에 str만 찾음 
         if isinstance(element, str):
+            #element str만 빼고 다 무시(strip)
             text += element.strip() + ' '
+    # 한번더 공백이 존재할 수 있으니까 strip()
     return text.strip()
 
 def crawl_article(url):
     try:
+        # get요청인데 8초동안 처리 못하면 넘어감
         response = requests.get(url, timeout=8)
+        # 에러 처리
         response.raise_for_status()
+        # 파싱
         soup = BeautifulSoup(response.text, 'html.parser')
         article_content = ''
+        # 데이터 가져올 태그들
         tags_to_extract = [
             'p', 'div', 'article', 'section', 'header', 'footer', 'nav', 'aside',
             'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'code',
             'li', 'a', 'summary', 'span', 'strong', 'td'
         ]
+        # tags_to_extract 태그들 tag_name으로 순차적으로 대입
         for tag_name in tags_to_extract:
+            # soup 가져온 데이터에서 맞는 태그를 찾음 그리고 tag에 넣음
             for tag in soup.find_all(tag_name):
+                # extract_text_from_tag(tag)실행해서 결과를 article_content에 저장 
                 article_content += extract_text_from_tag(tag) + ' '
         return article_content
     except requests.RequestException as e:
         print(f"HTTP 요청 중 오류 발생: {e}")
         return None
 
+# 단어 별로 모으기 위해서 
 def preprocess_text(text):
+    # 혹시 모르는 영어 소문자로 변환
     text = text.lower()
-    text = re.sub(r'[^가-힣\s]', '', text)  # 한글과 공백을 제외한 모든 문자를 제거
-    text = re.sub(r'\s+', ' ', text)  # 연속된 공백을 단일 공백으로 변환
+    # 한글과 공백을 제외한 모든 문자를 제거
+    text = re.sub(r'[^가-힣\s]', '', text)
+    # 연속된 공백을 단일 공백으로 변환
+    text = re.sub(r'\s+', ' ', text)
     return text
 
+
 def extract_words(text):
+    # 공백 한번 더 제거 전처리과정에서 생기는 공백을 제거하기 위해서 
     words = text.split()
     return words
+
 
 def analyze_content(content):
     preprocessed_text = preprocess_text(content)
     words = extract_words(preprocessed_text)
+    # Counter 단어별로 몇번 나왔는지 카운트 
     word_counts = Counter(words)
     return word_counts
 
+# word_counts단어들 , min_count 최소 갯수 , exclude_words제외할 단어
 def filter_words(word_counts, min_count, exclude_words):
     # 제외할 단어 리스트를 포함하여 필터링
+    # min_count보다 큰경우만 찾아, word 안에 exclude_words이 단어들이 없어야 한다.는 조건을 걸려있음
+    # 
     filtered_counts = {word: count for word, count in word_counts.items() if count >= min_count and word not in exclude_words}
     return filtered_counts
 
+# 외부에서 실행되지 않게 설정
 if __name__ == "__main__":
     query = "저출산"
-    
+    # 저출산을 단어로 50개 검색
     search_results = get_search_results(query, 50)
+    # 전체 단어 빈도수 
     total_word_counts = Counter()
     
     if search_results:
         for url in search_results:
+            # 크롤링한 url표기
             print(f"\n크롤링 중인 URL: {url}")
+            # 캐그별로 분류된 데이터
             content = crawl_article(url)
             if content:
+                # 단어 카운트
                 word_counts = analyze_content(content)
+                # 
                 total_word_counts.update(word_counts)
             else:
                 print("크롤링된 내용이 없습니다.")
     
+    # 다 하고 나서 원하는 데이터만 가져오게 설정 
+    # 빈도수가 20번 이상인 것들만 가져오고 필터링
     min_count = 20
     filtered_word_counts = filter_words(total_word_counts, min_count, EXCLUDE_WORDS)
     
     print(f"\n{query}에 관한 총 단어 발생 횟수 ({min_count}회 이상):")
+    # .items() 모든 키-값 쌍 word-키, count-값 으로 할당
     for word, count in filtered_word_counts.items():
         print(f"'{word}': {count}")
     
