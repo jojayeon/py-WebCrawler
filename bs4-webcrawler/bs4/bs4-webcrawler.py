@@ -45,7 +45,7 @@ def extract_text_from_tag(tag):
 
 def crawl_article(url):
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=8)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         # 기사 내용 수집
@@ -75,7 +75,7 @@ if __name__ == "__main__":
     query = "저출산" #검색어 
     search_terms = ["산업화","도시화","지원","의료","수명","평균 수명","해결","문제","연금","임금","병원","비용","노동력","노동","생산","일자리","노인일자리","정년","사교육","이성","비용","데이트","시간","여유","결혼","나이","자녀","딩크족","안정감","경력","경력단절","커리어","불임","입양","육아","양육","결혼율","열등감","경쟁사회","sns","연예인","고령화"] #분석화할 데이터
     # 구글에서 검색 결과 URL 추출
-    search_results = get_search_results(query,15) #가져올 사이트 갯수 적기
+    search_results = get_search_results(query,50) #가져올 사이트 갯수 적기
     total_count = {term: 0 for term in search_terms}
     if search_results:
     # 각 URL에서 내용 크롤링 및 분석
@@ -91,10 +91,10 @@ if __name__ == "__main__":
                     total_count[term] += count
             else:
                 print("크롤링된 내용이 없습니다.")
+            time.sleep(0.3) 
     print(f"\n ${query}에 관한 총 발생 횟수:")
     for term, count in total_count.items():
         print(f"'{term}': {count}")
-    time.sleep(0.3)
         
 # 고령화
 # ["산업화","도시화","현대화","지원","의료","수명","평균 수명","해결","문제","연금","임금","병원","비용","노동력","노동","생산","일자리","노인일자리","시간","여유","결혼","나이","자녀","육아","양육","초저출산","저출산"]
