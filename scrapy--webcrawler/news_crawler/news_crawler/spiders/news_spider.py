@@ -1,4 +1,5 @@
 import scrapy
+from urllib.parse import urljoin
 
 class BasicSpider(scrapy.Spider):
     name = 'basic_spider'
@@ -8,9 +9,7 @@ class BasicSpider(scrapy.Spider):
         self.search_term = search_term
         self.start_urls = [
             f'https://www.chosun.com/search?query={search_term}',
-            # f'https://search.joongang.co.kr/search?q={search_term}',
             f'https://search.hani.co.kr/Search?query={search_term}',
-            # f'https://search.kyunghyang.com/search?q={search_term}',
             f'https://search.daum.net/search?w=news&lpp=10&DA=STC&rtmaxcoll=1&q={search_term}'
         ]
 
@@ -21,9 +20,13 @@ class BasicSpider(scrapy.Spider):
         links = response.xpath('//a/@href').getall()
         
         # 추출한 링크들을 로그로 출력합니다.
-        print(f'\nLinks found on {response.url}:')
+        filtered_links = ['google.com']
+
         for link in links:
-            print(link)
-        
-        # 검색어를 로그로 출력합니다.
-        self.log(f'Search Term: {self.search_term}')
+            full_url = urljoin(response.url, link)  # 상대 URL을 절대 URL로 변환
+            # //! if full_url.startswith('http') and not any(excluded in full_url for excluded in self.exclude_strings): 문제 있음 
+            filtered_links.append(full_url)
+
+        # 필터링된 링크를 로그에 기록합니다.
+        for url in filtered_links:
+            self.log(f'Filtered URL: {url}')
