@@ -3,32 +3,27 @@ import scrapy
 class BasicSpider(scrapy.Spider):
     name = 'basic_spider'
     
-    # 크롤링할 기본 URL을 지정합니다.
-    start_urls = [
-        'https://www.chosun.com/',
-        'https://www.joongang.co.kr/',
-        'https://www.hani.co.kr/',
-        'https://www.kyunghyang.com/',
-        'https://www.yna.co.kr/',
-        'https://news.daum.net/'
-        # 조선
-        # 중앙
-        # 한겨레
-        # 경향
-        # 연합
-        # 다음
-    ]
-    
     def __init__(self, search_term='', *args, **kwargs):
         super(BasicSpider, self).__init__(*args, **kwargs)
         self.search_term = search_term
+        self.start_urls = [
+            f'https://www.chosun.com/search?query={search_term}',
+            # f'https://search.joongang.co.kr/search?q={search_term}',
+            f'https://search.hani.co.kr/Search?query={search_term}',
+            # f'https://search.kyunghyang.com/search?q={search_term}',
+            f'https://search.daum.net/search?w=news&lpp=10&DA=STC&rtmaxcoll=1&q={search_term}'
+        ]
 
     def parse(self, response):
         self.log(f'Visited {response.url}')
         
-        # 제목을 추출합니다.
-        title = response.xpath('//title/text()').get()
-        self.log(f'Title: {title}')
-
+        # 모든 <a> 태그의 href 속성을 추출하여 리스트로 가져옵니다.
+        links = response.xpath('//a/@href').getall()
+        
+        # 추출한 링크들을 로그로 출력합니다.
+        print(f'\nLinks found on {response.url}:')
+        for link in links:
+            print(link)
+        
         # 검색어를 로그로 출력합니다.
         self.log(f'Search Term: {self.search_term}')
