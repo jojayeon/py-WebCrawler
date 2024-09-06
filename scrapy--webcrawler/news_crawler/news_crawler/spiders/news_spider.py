@@ -1,5 +1,5 @@
 import scrapy
-from urllib.parse import urljoin
+from urllib.parse import urljoin ,unquote
 
 class BasicSpider(scrapy.Spider):
     name = 'basic_spider'
@@ -9,8 +9,28 @@ class BasicSpider(scrapy.Spider):
         self.search_term = search_term
         self.start_urls = [
             f'https://www.chosun.com/search?query={search_term}',
-            f'https://search.hani.co.kr/Search?query={search_term}',
+            f'https://search.hani.co.kr/search?searchword={search_term}',
             f'https://search.daum.net/search?w=news&lpp=10&DA=STC&rtmaxcoll=1&q={search_term}'
+        ]
+
+        self.xpath_expressions = [
+            '//p/text()',
+            '//div/text()',
+            '//section/text()',
+            '//header/text()',
+            '//h1/text()',
+            '//h2/text()',
+            '//h3/text()',
+            '//h4/text()',
+            '//h5/text()',
+            '//h6/text()',
+            '//blockquote/text()',
+            '//pre/text()',
+            '//code/text()',
+            '//li/text()',
+            '//a/text()',
+            '//strong/text()',
+            '//td/text()'
         ]
 
     def parse(self, response):
@@ -18,15 +38,20 @@ class BasicSpider(scrapy.Spider):
         
         # 모든 <a> 태그의 href 속성을 추출하여 리스트로 가져옵니다.
         links = response.xpath('//a/@href').getall()
-        
-        # 추출한 링크들을 로그로 출력합니다.
-        filtered_links = ['google.com']
 
         for link in links:
             full_url = urljoin(response.url, link)  # 상대 URL을 절대 URL로 변환
-            # //! if full_url.startswith('http') and not any(excluded in full_url for excluded in self.exclude_strings): 문제 있음 
-            filtered_links.append(full_url)
-
-        # 필터링된 링크를 로그에 기록합니다.
-        for url in filtered_links:
-            self.log(f'Filtered URL: {url}')
+            if not ( '.jpg' in full_url or '.png' in full_url or '.gif' in full_url or '.pdf' in full_url or '.mp4' in full_url or 'vimeo.com' in full_url or 'instagram.com' in full_url or 'imgur.com' in full_url or 'download' in full_url or 'attachment' in full_url or 'down.do' in full_url or 'FileDown.do' in full_url or 'google.com' in full_url or 'youtube.com' in full_url or 'melon' in full_url or 'w=' in full_url or 'p=' in full_url or 'kakao' in full_url or 'facebook' in full_url or 'japan' in full_url or 'china' in full_url or 'subscribe' in full_url or 'signin' in full_url or 'signup' in full_url or 'register' in full_url or 'apply' in full_url or 'recruit' in full_url or 'applyin' in full_url or 'customer_report' in full_url or 'customer_submit' in full_url or 'customer_view' in full_url or 'privacy' in full_url or 'mypage_help' in full_url or 'help' in full_url or 'rules' in full_url or 'sitemap' in full_url or 'about' in full_url or 'contact' in full_url or 'careers' in full_url or 'pdf' in full_url or 'search' in full_url or 'twitter' in full_url or 'shopping' in full_url or 'company' in full_url or 'subscription' in full_url or 'member' in full_url ) and ( full_url.startswith('http') ):
+                yield scrapy.Request(full_url, callback=self.parse_page)
+        
+    def parse_page(self, response):
+        # 페이지에서 <p> 태그의 데이터를 추출합니다.
+        for xpath in self.xpath_expressions:
+            paragraphs = response.xpath(xpath).getall()
+            if paragraphs:
+                for paragraph in paragraphs:
+                    yield {
+                        'url': response.url,
+                        'paragraph': paragraph,
+                        'xpath': xpath
+                    }
