@@ -2,7 +2,7 @@ import scrapy
 from urllib.parse import urljoin
 from konlpy.tag import Okt
 from collections import Counter
-from itertools import chain
+
 
 class BasicSpider(scrapy.Spider):
     name = 'basic_spider'
@@ -38,6 +38,10 @@ class BasicSpider(scrapy.Spider):
 
         self.word_count = Counter()
 
+        self.total_word_count = Counter()
+        self.excluded_words = ['이', '가', '은', '는', '을', '를']
+
+
     def parse(self, response):
         # 모든 <a> 태그의 href 속성을 추출하여 리스트로 가져옵니다.
         links = response.xpath('//a/@href').getall()
@@ -66,7 +70,11 @@ class BasicSpider(scrapy.Spider):
                 for paragraph in paragraphs:
                     # 단어 추출 및 카운팅
                     words = okt.nouns(paragraph)
-                    self.word_count.update(words)
+                    filtered_words = [word for word in words if word not in self.excluded_words]
+        
+        # 단어의 빈도수를 계산합니다.
+        self.word_count.update(filtered_words)
+        self.total_word_count.update(filtered_words)
 
     def closed(self, reason):
         # 스파이더가 종료될 때 단어 개수를 출력
